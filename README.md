@@ -189,4 +189,4 @@ http://<host>:39447/api/remote/192.168.1.102/media/toggle?token=your-secret
 
 ## License
 
-TBD -- a permissive open-source license will be added before wider release.
+MIT -- see [LICENSE](LICENSE). Portions derive from the MIT-licensed WiiM Dashboard project.
