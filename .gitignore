@@ -43,3 +43,6 @@ __pycache__/
 
 # showa diagnostic dumps (contain device IPs / hardware details)
 _showa/diag-*.json
+
+# Local working handoff notes -- contains LAN IPs, device MACs, personal paths; not for publication
+SESSION_HANDOFF.md
