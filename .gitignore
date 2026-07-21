@@ -1,0 +1,45 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# runtime data (sqlite db, secrets, certs)
+/data
+*.db
+*.db-*
+
+# env
+.env
+.env*.local
+
+# misc
+.DS_Store
+*.pem
+*.log
+npm-debug.log*
+
+# os / editor
+.vscode/
+.idea/
+
+# local AI/editor tooling (may hold local identity / secrets — never publish)
+.claude/
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
+
+# wiim-sniff.py capture output (contains device IPs / account-linked URLs)
+scripts/wiim-capture.jsonl
+scripts/wiim-commands-summary.json
+__pycache__/
+
+# showa diagnostic dumps (contain device IPs / hardware details)
+_showa/diag-*.json

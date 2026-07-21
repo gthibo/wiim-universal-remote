@@ -1,0 +1,39 @@
+services:
+  wiim-remote:
+    build: .
+    image: wiim-remote:latest
+    container_name: wiim-remote
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      # Zoraxy reverse-proxies https traffic to this host port.
+      # Security: since TRUST_PROXY=true makes the app honour X-Forwarded-For,
+      # only Zoraxy should be able to reach this port. If Zoraxy runs on the
+      # same host, bind to loopback so the port isn't exposed to the LAN:
+      #   - "127.0.0.1:39446:3000"
+      - "39447:3000"
+    volumes:
+      # Named volume persists the SQLite DB. Docker initialises it with the
+      # image's /data ownership, so the non-root container user (uid 1001) can
+      # write it — a host bind-mount (./data) would be root-owned on Linux and
+      # break SQLite. Back up with:
+      #   docker run --rm -v wiim-data:/data -v "$PWD":/b alpine tar czf /b/wiim-backup.tgz -C /data .
+      - wiim-remote-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  wiim-remote-data:
+
+# ----------------------------------------------------------------------------
+# LAN auto-discovery (SSDP) needs the container to share the host network so it
+# can send/receive UDP multicast. If you only ever add devices by IP, you can
+# ignore this. To enable discovery, comment out the `ports:` block above and
+# uncomment the line below instead:
+#
+#    network_mode: host
+# ----------------------------------------------------------------------------

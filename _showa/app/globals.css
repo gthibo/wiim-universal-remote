@@ -1,0 +1,217 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   SHOWA HI-FI COUNTER — re-skin token layer
+   Drop-in replacement for src/app/globals.css.
+
+   Design language: Rams/Loewy-era hi-fi object language fused with 1960s–80s
+   jazz album-cover graphics. Walnut cabinet, cream faceplate, rust signal
+   accent. Contrast lives in material VALUE, not hue. Rectilinear by default;
+   the one deliberate circular element is the play button.
+
+   The whole palette is HSL CSS variables consumed by tailwind.config.ts, so
+   every card re-themes from here. Per-card material work (the niche, brass
+   keys, recessed panels) layers on top of these tokens in the components.
+   ========================================================================== */
+
+:root {
+  /* ── Core surfaces ─────────────────────────────────────────────────────
+     background = the walnut cabinet the whole dashboard sits in.
+     surface/card = the recessed near-black electronics faces (Static).      */
+  --background: 32 83% 9%; /* Walnut Dark #2A1804 */
+  /* SHOWA RE-SKIN: faceplate family shifted from cream (#E8E1D3, hsl 40 31% 87%)
+     to a muted taupe (#a78d7a, hsl 25 20% 57%) per Greg's direct request —
+     covers controls, text, icons: everything that read as the bright cream.
+     --foreground was a separate literal token that happened to equal the old
+     cream; shifted in lockstep so body/title text tracks --faceplate exactly
+     rather than drifting apart. */
+  --foreground: 26 12% 58%; /* Faceplate (taupe, desaturated) #a09287 */
+  --surface: 36 10% 10%; /* Static #1C1A17 */
+  --card: 36 10% 10%; /* Static #1C1A17 — recessed panel face */
+  --card-foreground: 26 12% 58%;
+
+  /* muted = dim faceplate text / inert controls in the same value family.
+     Proportional shift (same L-delta from the old cream pair, ~23pp) kept
+     deliberately per Greg even though it lands fairly dim (~34% L) against
+     the near-black panels — matches the new, dimmer overall mood. */
+  --muted: 33 30% 18%;
+  --muted-foreground: 26 10% 35%;
+
+  /* ── Accents ───────────────────────────────────────────────────────────
+     primary = lit rust (surface-level accents, active states, play button).
+     accent  = recessed rust (shadowed contexts: scrubber fill, icon borders).
+     Two deliberate rust values, per the measured mockups.                    */
+  --primary: 15 71% 41%; /* Rust #B3441E */
+  --primary-foreground: 40 31% 87%;
+  --accent: 18 72% 32%; /* Rust Recessed #8D3B17 */
+  --accent-foreground: 40 31% 87%;
+
+  /* ── Lines & inputs ────────────────────────────────────────────────────
+     Hairline seams between functional zones; warm, low-contrast.            */
+  --border: 36 12% 16%;
+  --input: 36 12% 14%;
+  --ring: 15 71% 41%; /* focus ring = lit rust */
+
+  /* ── Status ────────────────────────────────────────────────────────────
+     Velvet is reserved for mute/error only (per the locked palette).
+     Teal is the secondary "engaged/connected" cue.                          */
+  --destructive: 0 54% 31%; /* Velvet #7A2424 */
+  --destructive-foreground: 40 31% 87%;
+  --success: 178 46% 34%; /* Tape Teal #2E7D7A */
+  --warning: 38 80% 48%;
+
+  /* ── Material extras (Showa-specific; safe additions) ──────────────────
+     Used by the wood frame, faceplate keys, and brass treatments. Cards can
+     read these directly via hsl(var(--...)) where a token swap isn't enough. */
+  --walnut: 33 82% 13%; /* #3B2306 */
+  --walnut-dark: 32 83% 9%; /* #2A1804 */
+  --faceplate: 26 12% 58%; /* #a09287 */
+  --faceplate-dim: 26 12% 52%; /* proportional shade, same L-delta as before */
+  --rust: 15 71% 41%;
+  --rust-recessed: 18 72% 32%;
+  --teal: 178 46% 34%;
+  --velvet: 0 54% 31%;
+  --static: 36 10% 10%;
+  /* Brass key face (warm champagne) — sampled from the source-panel mockup.
+     Kept as an open material question; tune centrally here when settled.     */
+  --brass: 38 38% 72%;
+  --brass-dim: 36 30% 58%;
+
+  /* Hardware corners are rectilinear. The one circle (play) opts out locally.
+     A hair of radius softens panel edges without reading as "rounded UI".    */
+  --radius: 0.125rem;
+
+  /* Type roles: --font-display / --font-sans / --font-mono are NOT set here.
+     next/font/google sets them on <html> in layout.tsx (Antonio, IBM Plex
+     Sans, IBM Plex Mono) so the font files are self-hosted at build time —
+     required by the CSP (`font-src 'self' data:`; a Google Fonts CDN <link>
+     would be blocked). Redeclaring them here would just create a specificity
+     fight with layout.tsx for no benefit. To swap a face, change the
+     next/font import in layout.tsx, not this file.                         */
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Walnut cabinet ground: a warm vertical grade instead of the violet glow.
+     The procedural wood-grain texture is applied by the frame treatment in
+     the card layer (feTurbulence), not here, so it tiles at the panel level. */
+  background-image:
+    radial-gradient(120% 80% at 18% -10%, hsl(var(--walnut) / 0.55), transparent 60%),
+    linear-gradient(180deg, hsl(var(--walnut) / 0.35), transparent 40%);
+  background-attachment: fixed;
+  padding-top: env(safe-area-inset-top);
+  overscroll-behavior-y: none;
+}
+
+@layer components {
+  /* ── .glass → raised electronics panel proud of the walnut cabinet ──────
+     Re-skinned from the earlier INSET recess to a RAISED bevel, translated
+     directly from Greg's Photoshop layer styles (close-up confirmed):
+       • Inner Bevel, direction up, size 7px / soften 2px, 61° angle /
+         37° altitude → low light from the upper edge. Modeled as a graded
+         inset highlight on the top edge + an inset shade on the bottom
+         interior (the bevel's lit and shadowed faces).
+       • Highlight: Screen, white @ 19%  → top inset highlight.
+       • Shadow:    Multiply, black @ 72%, half-round contour → bottom inset
+         shade. Two stops (a tight one + a softer ~7px one) approximate the
+         half-round contour's quick-then-easing falloff over the bevel size.
+       • Outer Stroke: black 5px @ 60% → a hard ring (NOT a blurred drop
+         shadow) separating the panel from the walnut, giving the small
+         "inset" reveal illusion. Done as a 0-blur 5px box-shadow ring so it
+         stays a crisp band like a Photoshop stroke, not a soft halo.
+     No outward drop shadow — Greg's PSD spec doesn't include one; the 5px
+     stroke does the separation. Order matters: the inset bevel shadows must
+     come before the outer stroke ring so the ring frames the lit panel.     */
+  .glass {
+    /* Fully opaque — a solid raised panel, not translucent glass. */
+    background: hsl(var(--static));
+    /* Edge crisp-up — black at low opacity, NOT the grey --border token. The
+       --border value (36 12% 16%) resolves LIGHTER than the panel face
+       (--static, 36 10% 10%), so a 1px --border read as a pale grey hairline
+       catching light around the panel (Greg flagged it). The 5px black ring
+       below already does the panel/walnut separation; this 1px is now just a
+       true-black crisp edge so the corner doesn't show a lit grey line. */
+    border: 1px solid hsl(0 0% 0% / 0.5);
+    box-shadow:
+      /* SHOWA RE-SKIN: bevel highlight widened/brightened (7px→5px blur span
+         but stronger 19%→45% opacity — net brighter, more visible top edge)
+         and the outer stroke swapped from a thick 5px/60% ring to a hairline
+         1px/60% — per Greg's direct box-shadow spec. Crisper edge, brighter
+         top bevel; the two inset black bevel-shade stops are unchanged. */
+      inset 0 5px 5px -6px hsl(0 0% 100% / 0.45),
+      inset 0 -3px 3px -2px hsl(0 0% 0% / 0.72),
+      inset 0 -7px 9px -5px hsl(0 0% 0% / 0.5),
+      0 0 0 1px hsl(0 0% 0% / 0.6);
+  }
+
+  /* ── .control-tile → subtle raised control face (dropdown, action tiles) ─
+     A much FLATTER cousin of .glass, for small interactive controls (the
+     DEVICE column's device-switcher compartments + Add Device/Settings/Logout
+     tiles). .glass is tuned for large panels: its wide bright top highlight
+     and deep two-stop bottom shadow read as a pillowed/rounded bevel at
+     button scale (Greg flagged: too dramatic, looks rounded vs the flat-faced
+     mockup). This keeps only a FAINT 1px inset top highlight + a FAINT 1px
+     inset bottom shade — enough to read as a raised face — plus the same
+     crisp 1px black edge ring. Corners stay rectilinear via --radius; the
+     "rounded" look was the soft shadow falloff, not real border-radius, so
+     flattening the shadow is the fix. Same --static face as .glass.          */
+  .control-tile {
+    background: hsl(var(--static));
+    border: 1px solid hsl(0 0% 0% / 0.5);
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.06),
+      inset 0 -1px 0 0 hsl(0 0% 0% / 0.35),
+      0 0 0 1px hsl(0 0% 0% / 0.4);
+  }
+
+  /* Wood-frame wrapper: wrap a panel (or the whole rack) to seat it in walnut.
+     Pair with the feTurbulence grain overlay in the component for real grain;
+     this provides the base gradient + framing shadow.                        */
+  .cabinet {
+    background:
+      linear-gradient(120deg, hsl(var(--walnut)), hsl(var(--walnut-dark)) 85%);
+    box-shadow:
+      0 1px 0 0 hsl(var(--faceplate) / 0.05) inset,
+      0 30px 60px -30px hsl(0 0% 0% / 0.9);
+  }
+
+  .focus-ring {
+    @apply outline-none ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring;
+  }
+}
+
+/* Warm, theme-aware scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+  background-clip: padding-box;
+}
+
+/* Range/slider thumbs inherit the rust accent on iOS Safari */
+input[type="range"] {
+  accent-color: hsl(var(--primary));
+}

@@ -1,0 +1,13 @@
+# Adds a "Sponsor" button to the repo. It becomes active once the GitHub account
+# below is enrolled in GitHub Sponsors (https://github.com/sponsors).
+#
+# Privacy: the public-facing page is the GitHub profile (illianoaoi). Your legal
+# identity is only used privately for Stripe payout verification — it is never
+# shown publicly. Do NOT add a platform whose public page would reveal a real
+# name (e.g. PayPal.me).
+github: illianoaoi
+
+# Optional extra platforms — uncomment once set up, and make sure the public
+# handle/page is the alias, not a real name:
+# ko_fi: illiano
+# buy_me_a_coffee: illiano

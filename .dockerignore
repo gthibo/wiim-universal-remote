@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.gitignore
+data
+*.db
+*.db-*
+.env
+.env*.local
+*.pem
+*.log
+README.md
+.DS_Store
+.vscode
+.idea
+.claude
+_showa
