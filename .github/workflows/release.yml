@@ -10,7 +10,7 @@ permissions:
   packages: write # push the image to GHCR
 
 env:
-  IMAGE: ghcr.io/gthibo/wiim-dashboard
+  IMAGE: ghcr.io/gthibo/wiim-universal-remote
 
 jobs:
   docker:
@@ -49,7 +49,7 @@ jobs:
           # GHCR always; Docker Hub line is blank (ignored) unless the secret is set.
           images: |
             ${{ env.IMAGE }}
-            ${{ env.DOCKERHUB_TOKEN != '' && 'docker.io/mrthibsog/wiim-dashboard' || '' }}
+            ${{ env.DOCKERHUB_TOKEN != '' && 'docker.io/mrthibsog/wiim-universal-remote' || '' }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -65,28 +65,3 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-  release:
-    name: Publish GitHub release
-    runs-on: ubuntu-latest
-    needs: docker
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Extract changelog section for this tag
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          awk -v ver="$VERSION" '
-            $0 ~ "^## \\[" ver "\\]" { flag=1; next }
-            /^## \[/ { if (flag) exit }
-            flag { print }
-          ' CHANGELOG.md > RELEASE_NOTES.md
-          echo "----- extracted release notes for $VERSION -----"
-          cat RELEASE_NOTES.md
-
-      - name: Create release
-        uses: softprops/action-gh-release@v2
-        with:
-          # The changelog section is the body; GitHub's auto notes are appended.
-          body_path: RELEASE_NOTES.md
-          generate_release_notes: true
