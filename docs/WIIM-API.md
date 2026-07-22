@@ -190,3 +190,15 @@ Destructive/administrative commands — `reboot`, `setShutdown`, factory reset, 
 
 - **No favorite / like / thumbs-up command** for the *current* track. Confirmed against the official PDF, `python-linkplay`, and the community OpenAPI. The WiiM app's heart calls each streaming service's own cloud API, which a server can't reach — so this project implements "Love" via **Last.fm `track.love`** instead.
 - **Preset slots are read-only over HTTP** — you can list them (`getPresetInfo`) and **play** a slot (`MCUKeyShortClick:<n>`), but there is no command to set or reorder a preset from the API.
+
+## Multiroom / groups _(community-verified; wmrm 4.3)_
+
+Confirmed 2026-07-13 against two real devices (WiiM Pro fw `Linkplay.4.8.814756`, WiiM Ultra fw `Linkplay.5.2.818432`, both `wmrm_version: 4.3`). Pywiim-sourced assumptions about `getStatusEx`'s shape are wrong for this firmware generation.
+
+- **No nested `multiroom` object in `getStatusEx` at all**, on either master or slave, ever. A master's `group` field reads `"0"` -- identical to solo.
+- **The slave-side master IP is a top-level field**: `master_ip` / `master_uuid`, present on the slave's own `getStatusEx` only while `group == "1"`. Not nested.
+- **The master never reports its slave list via `getStatusEx`**. The only way to learn it is `multiroom:getSlaveList` sent to the candidate master -- response: `{re}"slaves":<n>,"slave_list":[{"name","uuid","ip","volume","mute",...}]}`. That's one extra HTTP call per device, not free.
+- **Group mute/volume broadcast commands are accepted but are pure no-ops**: `setPlayerCmd:slave_mute:mute` and `setPlayerCmd:slave_vol:<n>` both return `"OK"` and change nothing. The **per-slave targeted forms work**: `multiroom:SlaveMute:<ip>:<0|1>` and `multiroom:SlaveVolume:<ip>:<n>`, both sent to the master, naming the slave IP.
+- **Not reproduced:** a report that a slave leaving a group stops the master's playback. Two independent retests showed the master unaffected. If it recurs, capture container logs alongside device-side `getPlayerStatus` polling to catch it live.
+
+Not implemented in this service -- recorded here because it was hardware-verified and is expensive to rediscover.
