@@ -1,4 +1,12 @@
-/** Normalised, UI-friendly shapes derived from the raw WiiM API responses. */
+/**
+ * Normalised, UI-friendly shapes derived from the raw WiiM API responses.
+ *
+ * Headless build: the EQ, lyrics, and multi-device-snapshot types were removed
+ * with the dashboard (2026-07-22) -- they had no consumer here and implied
+ * features this service does not have. Git history has them if the dashboard
+ * ever needs them back. What remains is what commands.ts / parse.ts actually
+ * return.
+ */
 
 export type PlaybackState = "playing" | "paused" | "stopped" | "loading";
 
@@ -6,14 +14,14 @@ export type PlaybackState = "playing" | "paused" | "stopped" | "loading";
 export interface StreamService {
   key: string; // "tidal" | "spotify" | "qobuz" | "airplay" | "bluetooth" | ...
   name: string; // display label, e.g. "TIDAL Connect"
-  logo: string | null; // brand-logo key for <ServiceLogo>; null → lucide fallback
+  logo: string | null; // brand-logo key; null -> caller picks a fallback
   detail?: string | null; // e.g. the connected Bluetooth source device name
 }
 
 /**
  * Audio format for the current track. WiiM's HTTP API does NOT expose the
  * codec, so `codec`/`tier` are inferred from sampleRate/bitDepth + the known
- * service (see now-playing-info.ts). Numbers are the raw getMetaInfo values.
+ * service. Numbers are the raw getMetaInfo values.
  */
 export interface AudioFormat {
   codec: string | null; // inferred, e.g. "FLAC" | "ALAC" | "MP3" | "AAC" | "OGG"
@@ -23,18 +31,12 @@ export interface AudioFormat {
   bitRate: number | null; // kbps
 }
 
-/** A single timed lyric line (synced lyrics from LRCLIB). */
-export interface LyricLine {
-  t: number; // start time in seconds
-  text: string;
-}
-
 export interface PlayerStatus {
   state: PlaybackState;
   title: string | null;
   artist: string | null;
   album: string | null;
-  albumArt: string | null; // absolute device URL (proxied to the client)
+  albumArt: string | null; // absolute device URL
   position: number; // seconds
   duration: number; // seconds
   volume: number; // 0-100
@@ -52,9 +54,12 @@ export interface PlayerStatus {
   /** numeric EQ preset index from player status (presentational only). */
   eqIndex: number;
   quality: string | null; // e.g. "44.1 kHz / 16 bit"
-  /** detected streaming service (network/BT sources); null otherwise. */
+  /**
+   * NOTE: `service`, `audio`, `quality` and `albumArt` are filled from
+   * getMetaInfo. The /status route deliberately does not call it (one HTTP
+   * round trip, not two), so they are null there. That is expected, not a bug.
+   */
   service: StreamService | null;
-  /** audio format details (filled from getMetaInfo); null when unavailable. */
   audio: AudioFormat | null;
 }
 
@@ -68,19 +73,19 @@ export interface DeviceInfo {
   ip: string;
   rssi: number | null;
   internet: boolean;
-  /** active network interface (EQ uses this for the network source name). */
+  /** active network interface. */
   network: "ethernet" | "wifi" | null;
   group: string; // "0" master/standalone, "1" follower
-  /** temperatures in °C when the model exposes them (amp models). */
+  /** temperatures in degrees C when the model exposes them (amp models). */
   temperatureCpu: number | null;
   temperatureBoard: number | null;
   /** number of preset slots (preset_key). */
   presetCount: number;
   /**
    * Multiroom role. "solo"/"slave" come from getStatusEx (`group` +
-   * top-level `master_ip`); "master" is only set by snapshot.ts after a
-   * separate `multiroom:getSlaveList` call comes back non-empty — this
-   * firmware never reports master/slave-list data via getStatusEx itself.
+   * top-level `master_ip`). "master" required a separate
+   * `multiroom:getSlaveList` call that this build does not make, so in
+   * practice this is never "master" here.
    */
   multiroomRole: "solo" | "master" | "slave";
   /** master's IP when role === "slave"; null otherwise. */
@@ -106,94 +111,8 @@ export interface OutputStatus {
   audioCast: boolean;
 }
 
-export type EqType = "graphic" | "parametric";
-
-export interface GraphicBand {
-  param: string; // e.g. "band31hz"
-  label: string; // e.g. "31"
-  gain: number; // dB
-}
-
-export type PeqChannelMode = "stereo" | "lr";
-export type PeqChannel = "stereo" | "left" | "right";
-
-export interface ParametricBand {
-  letter: string; // a–l (firmware), a–j (UI)
-  mode: number; // -1 off, 0 LS, 1 PK, 2 HS, 3 LP, 5 HP (4 unused)
-  frequency: number; // Hz
-  q: number;
-  gain: number; // dB
-}
-
-export interface EqParametricState {
-  name: string;
-  channelMode: PeqChannelMode;
-  /** stereo: only `stereo` populated. lr: `left` + `right` populated. */
-  bands: Partial<Record<PeqChannel, ParametricBand[]>>;
-}
-
-export interface EqPresets {
-  custom: string[];
-  preset: string[];
-}
-
-export interface EqSourceState {
-  source: string; // EQ source_name (e.g. "optical")
-  enabled: boolean;
-  activeType: EqType | null; // which plugin is currently on for this source
-  graphic: { name: string; bands: GraphicBand[] };
-  parametric: EqParametricState;
-}
-
-/** Full EQ payload for one source (fetched on demand, not in the poll). */
-export interface EqOverview {
-  supported: boolean; // false = firmware doesn't expose the v2 EQ API → hide card
-  sources: { key: string; label: string }[];
-  state: EqSourceState | null;
-  presets: { graphic: EqPresets; parametric: EqPresets };
-}
-
 export interface PresetItem {
   index: number; // 1-based slot
   name: string | null; // null = empty slot
-  hasArt: boolean; // artwork available (served via the preset-art proxy)
-}
-
-export interface DeviceCapabilities {
-  /** temperature fields present (amp models). */
-  temperature: boolean;
-  /** number of preset slots (getStatusEx `preset_key`), 0 if unsupported. */
-  presetCount: number;
-  /** getSubLPF returned a valid payload. */
-  subwoofer: boolean;
-  /** EQ_support flag / EQ commands work. */
-  equalizer: boolean;
-  /** getNewAudioOutputHardwareMode works. */
-  outputSwitch: boolean;
-  /** input source keys this device supports (from plm_support / model). */
-  sources: string[];
-  /** output ids this device offers. */
-  outputs: number[];
-  isAmp: boolean;
-}
-
-/** Everything the dashboard needs for one device in a single poll. */
-export interface DeviceSnapshot {
-  id: string;
-  online: boolean;
-  error?: string;
-  info: DeviceInfo | null;
-  player: PlayerStatus | null;
-  sub: SubwooferStatus | null;
-  output: OutputStatus | null;
-  presets: PresetItem[] | null;
-  capabilities: DeviceCapabilities | null;
-  /** custom input names from the WiiM app (getModeRename), keyed by SOURCES.key. */
-  sourceNames?: Record<string, string>;
-  /** input source keys disabled in the WiiM app (getAudioInputEnable). */
-  disabledSources?: string[];
-  /** connected USB DAC name (getSoundCardModeSupportList); null if none. */
-  usbDac?: string | null;
-  /** sleep-timer expiry (epoch ms) for this device; null if none. */
-  sleepExpiresAt?: number | null;
+  hasArt: boolean;
 }
