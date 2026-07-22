@@ -62,6 +62,15 @@ export const Cmd = {
   btDiscover: (seconds: number) => `startbtdiscovery:${Math.trunc(seconds)}`, // scan for NEW sinks
   btDiscoverResult: "getbtdiscoveryresult",
 
+  // LED indicator (front-panel LED). Source: DanBrezeanu/wiim-extended-http-api.
+  // Command string community-confirmed; not yet hardware-verified on our devices.
+  ledSet: (on: boolean) => `LED_SWITCH_SET:${on ? 1 : 0}`,
+
+  // Display on/off (Ultra only — the Pro has no screen).
+  // disable:1 = off, disable:0 = on. Hardware-verified on Ultra (returns "Ok").
+  // Note: encodeCommand does not encode { } " so the JSON passes through raw; device accepts it.
+  displaySet: (on: boolean) => `setLightOperationBrightConfig:{"disable":${on ? 0 : 1}}`,
+
   // Presets (favourites). Count from getStatusEx `preset_key`.
   getPresets: "getPresetInfo",
   playPreset: (n: number) => `MCUKeyShortClick:${Math.trunc(n)}`,

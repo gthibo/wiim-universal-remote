@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import { switchSource } from "@/lib/wiim/commands";
+﻿import { NextRequest } from "next/server";
+import { switchSource, nextInputSource } from "@/lib/wiim/commands";
 import { SOURCES } from "@/lib/wiim/constants";
 import { remoteGuard } from "@/lib/remote/auth";
 import { resolveHost } from "@/lib/remote/resolve";
@@ -37,11 +37,16 @@ export async function GET(
   if (denied) return denied;
   const { deviceId, source } = await ctx.params;
 
-  // Keith exposes /input/next-input; there's no single "next input" command
-  // in commands.ts yet (it'd need enumeration over enabled sources). Name it
-  // explicitly so it's a known TODO, not a silent miss.
+  // Keith exposes /input/next-input. Implemented: fetches enabled inputs from
+  // the device, finds the current source in SOURCES order, advances one step
+  // (wrapping). See nextInputSource() in commands.ts.
   if (norm(source) === "nextinput") {
-    return new Response("error: next-input not yet implemented", { status: 501 });
+    try {
+      await nextInputSource(resolveHost(deviceId));
+      return ok();
+    } catch (e) {
+      return fail(e);
+    }
   }
 
   const value = INPUT_VALUE[norm(source)];

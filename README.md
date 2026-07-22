@@ -12,7 +12,7 @@ One of the biggest gaps for WiiM owners is the lack of an official way to drive 
 
 ## Compatibility
 
-**Built and tested specifically for the [Sofabaton X1S](https://www.sofabaton.com/) universal remote** (and its sibling, the X1). The X1S has a built-in "Wi-Fi virtual device / IP command" feature that lets you map physical buttons to HTTP URLs with **no programming** -- you paste a URL per button in the Sofabaton app and it works.
+**Built and tested specifically for the [Sofabaton X1S](https://www.sofabaton.com/) universal remote**. The X1S has a built-in "Wi-Fi virtual device / IP command" feature that lets you map physical buttons to HTTP URLs with **no programming** -- you paste a URL per button in the Sofabaton app and it works.
 
 Because this service speaks plain HTTP GET, *anything* that can send an HTTP request can drive it -- Home Assistant, a Crestron/Control4 driver, a Stream Deck, a shell script with `curl`, etc. But among **consumer hardware universal remotes** -- the kind you buy to replace a pile of remotes -- the Sofabaton X1S/X1 is the only one we're currently aware of with the built-in HTTP-command feature needed to use this without writing code.
 

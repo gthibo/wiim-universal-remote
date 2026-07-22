@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 import { wiimRequest, WiimError } from "./client";
 import { Cmd, SOURCES, SUB_RANGES } from "./constants";
 import {
@@ -405,6 +405,37 @@ export async function switchSource(ip: string, value: string): Promise<void> {
   assertAccepted(text, command);
 }
 
+/**
+ * Cycle to the next enabled input source (implements /input/next-input).
+ *
+ * Fetches player status (for current sourceKey) and the enabled-input map in
+ * parallel, then walks the SOURCES array in order -- skipping disabled inputs --
+ * and switches to the one after the current. Wraps at the end.
+ *
+ * Fallback behaviour:
+ *   - If getAudioInputEnable returns {} (unsupported device), all SOURCES are
+ *     treated as candidates.
+ *   - If sourceKey is null (unrecognised mode), findIndex returns -1, so
+ *     (-1 + 1) % n = 0 and we start from the first enabled source (wifi).
+ */
+export async function nextInputSource(ip: string): Promise<void> {
+  const [status, enableMap] = await Promise.all([
+    fetchPlayerStatus(ip),
+    fetchAudioInputEnable(ip),
+  ]);
+
+  const hasEnableData = Object.keys(enableMap).length > 0;
+  const cycle = SOURCES.filter((s) => !hasEnableData || enableMap[s.key] === true);
+
+  if (cycle.length === 0) {
+    throw new WiimError("No enabled input sources found", "NO_SOURCES");
+  }
+
+  const currentIdx = cycle.findIndex((s) => s.key === status.sourceKey);
+  const nextIdx = (currentIdx + 1) % cycle.length;
+  await switchSource(ip, cycle[nextIdx].value);
+}
+
 interface RawPreset {
   number: number;
   name: string | null;
@@ -471,6 +502,18 @@ export async function fetchPresetArtUrl(ip: string, index: number): Promise<stri
 
 export async function playPreset(ip: string, index: number): Promise<void> {
   const command = Cmd.playPreset(index);
+  const text = await send(ip, command);
+  assertAccepted(text, command);
+}
+
+export async function setLed(ip: string, on: boolean): Promise<void> {
+  const command = Cmd.ledSet(on);
+  const text = await send(ip, command);
+  assertAccepted(text, command);
+}
+
+export async function setDisplay(ip: string, on: boolean): Promise<void> {
+  const command = Cmd.displaySet(on);
   const text = await send(ip, command);
   assertAccepted(text, command);
 }
