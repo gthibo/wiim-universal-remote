@@ -1,5 +1,5 @@
 import "server-only";
-import { deviceErrorStatus } from "@/lib/api";
+import { deviceErrorStatus } from "./http";
 import { WiimError } from "@/lib/wiim/client";
 
 /**
