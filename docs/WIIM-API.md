@@ -197,7 +197,7 @@ Confirmed 2026-07-13 against two real devices (WiiM Pro fw `Linkplay.4.8.814756`
 
 - **No nested `multiroom` object in `getStatusEx` at all**, on either master or slave, ever. A master's `group` field reads `"0"` -- identical to solo.
 - **The slave-side master IP is a top-level field**: `master_ip` / `master_uuid`, present on the slave's own `getStatusEx` only while `group == "1"`. Not nested.
-- **The master never reports its slave list via `getStatusEx`**. The only way to learn it is `multiroom:getSlaveList` sent to the candidate master -- response: `{re}"slaves":<n>,"slave_list":[{"name","uuid","ip","volume","mute",...}]}`. That's one extra HTTP call per device, not free.
+- **The master never reports its slave list via `getStatusEx`**. The only way to learn it is `multiroom:getSlaveList` sent to the candidate master -- response: `{"slaves":<n>,"slave_list":[{"name","uuid","ip","volume","mute",...}]}`. That's one extra HTTP call per device, not free.
 - **Group mute/volume broadcast commands are accepted but are pure no-ops**: `setPlayerCmd:slave_mute:mute` and `setPlayerCmd:slave_vol:<n>` both return `"OK"` and change nothing. The **per-slave targeted forms work**: `multiroom:SlaveMute:<ip>:<0|1>` and `multiroom:SlaveVolume:<ip>:<n>`, both sent to the master, naming the slave IP.
 - **Not reproduced:** a report that a slave leaving a group stops the master's playback. Two independent retests showed the master unaffected. If it recurs, capture container logs alongside device-side `getPlayerStatus` polling to catch it live.
 
