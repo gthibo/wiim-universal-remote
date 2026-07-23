@@ -36,11 +36,7 @@ So run this on something that is always on:
 
 ---
 
-## Install
-
-You need [Docker](https://docs.docker.com/get-started/get-docker/). On Windows and macOS that means **Docker Desktop**.
-
-### A word about security first
+## Security: read this before you install
 
 **Anyone on your Wi-Fi can control your speaker and see what you're playing.**
 
@@ -50,31 +46,161 @@ What matters:
 
 - **Don't forward this port to the internet.** Don't put it on a public web address. Don't set up a port forward on your router for it.
 - **Be aware of guest Wi-Fi.** If guests are on the same network, they can control your speaker too.
-- If you need a password anyway, see [Remote token](#remote-token) below.
+- If you want a password anyway, see [Remote token](#remote-token) below.
 
-### Steps
+---
+## Install
 
-```bash
-git clone https://github.com/gthibo/wiim-universal-remote.git
-cd wiim-universal-remote
-cp .env.example .env
-docker compose up -d
-```
+There are two versions of these instructions. They do the same thing.
 
-That's it. Open `http://localhost:39447` on the machine you installed it on.
+- **[The easy way](#the-easy-way)** — for anyone who has never opened a terminal. Nothing is assumed. It's long because it explains every step, not because it's hard.
+- **[The short way](#the-short-way)** — three commands, if you already know your way around Docker.
 
-To reach it from your phone or configure your remote, you need that machine's **network address** instead of `localhost` — something like `http://192.168.1.50:39447`. On Windows run `ipconfig`; on macOS or Linux run `ip addr` or check System Settings → Network.
-
-### Make it start automatically
-
-The container is already set to restart on its own (`restart: unless-stopped` in `docker-compose.yml`). You only need to make sure **Docker itself** starts with the machine:
-
-- **Docker Desktop (Windows/macOS):** Settings → General → check *Start Docker Desktop when you log in*.
-- **Linux:** `sudo systemctl enable docker`
-- **Docker inside WSL2:** WSL does not start at boot on its own. You'll need a scheduled task or a startup shortcut that runs `wsl -d <distro>` at login.
+You do **not** need to install git, Node, or any programming tools. You do **not** need to download the source code. There is a prebuilt image for both Intel/AMD and ARM (so a Raspberry Pi works fine).
 
 ---
 
+### The easy way
+
+#### Step 1 — Install Docker
+
+Docker is the program that runs this service. Install it on the always-on computer from the section above.
+
+- **Windows or Mac:** download **Docker Desktop** from [docker.com](https://docs.docker.com/get-started/get-docker/), run the installer, and **restart the computer** when it asks. Open Docker Desktop once and leave it running.
+- **Synology NAS:** open **Package Center**, search for **Container Manager**, install it.
+- **Raspberry Pi or other Linux:** open a terminal and run `curl -fsSL https://get.docker.com | sh`.
+
+You'll know it worked when Docker Desktop opens without an error, or when the Container Manager package appears in your NAS menu.
+
+#### Step 2 — Make a folder
+
+Make a new folder somewhere you'll remember. The name doesn't matter. For example:
+
+- **Windows:** `C:\wiim-remote`
+- **Mac:** a folder called `wiim-remote` inside your Documents
+- **Linux/Pi:** `/home/pi/wiim-remote`
+
+Everything in the next step goes inside this folder.
+
+#### Step 3 — Create two files
+
+You need two small text files. Both go in the folder you just made.
+
+Use a plain text editor — **Notepad** on Windows, **TextEdit** on Mac (choose *Format → Make Plain Text* first), or **Text Editor** on Linux. Don't use Word.
+
+**File 1** — name it exactly `docker-compose.yml`
+
+```yaml
+services:
+  wiim-remote:
+    image: ghcr.io/gthibo/wiim-universal-remote:latest
+    container_name: wiim-remote
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "39447:3000"
+```
+
+**File 2** — name it exactly `.env` (yes, it starts with a dot, and it has no other name). This file can be completely empty. It just needs to exist.
+
+> **Windows tip:** Notepad likes to add `.txt` to filenames. When you save, set *Save as type* to **All Files** and type the name exactly — `docker-compose.yml` and `.env`. If you end up with `docker-compose.yml.txt`, rename it and remove the `.txt`.
+>
+> **Mac tip:** Finder hides files starting with a dot. Press **Cmd+Shift+.** to see them.
+
+#### Step 4 — Open a terminal in that folder
+
+This is the step people get stuck on, so here it is exactly.
+
+The goal is a black-or-white text window that is *already pointed at your folder*. You don't need to type any navigation commands if you do it this way:
+
+- **Windows:** open the folder in File Explorer. Click the address bar at the top (the part showing the folder path), type `powershell`, and press Enter. A blue window opens, already in that folder.
+- **Mac:** open the folder in Finder. Right-click the folder, choose *Services → New Terminal at Folder*. (If you don't see it: System Settings → Keyboard → Keyboard Shortcuts → Services → check *New Terminal at Folder*.)
+- **Raspberry Pi / Linux:** right-click inside the folder and choose *Open in Terminal*.
+- **Synology NAS:** you don't need a terminal. See the NAS note at the end of this section.
+
+#### Step 5 — Start it
+
+Type this one line and press Enter:
+
+```
+docker compose up -d
+```
+
+The first run takes a minute or two while it downloads. When it finishes you'll see something like `Container wiim-remote Started`.
+
+That's the whole install. Nothing else to do.
+
+#### Step 6 — Check it's working
+
+Open a web browser **on that same computer** and go to:
+
+```
+http://localhost:39447
+```
+
+You should see the setup console. If you do, you're done — go to [Set up your WiiM's address](#set-up-your-wiims-address).
+
+#### Using a Synology NAS instead
+
+Container Manager can do this without a terminal:
+
+1. Put `docker-compose.yml` and `.env` in a shared folder (for example `docker/wiim-remote`).
+2. Open **Container Manager → Project → Create**.
+3. Give it a name, choose the folder you used, and pick *Use existing docker-compose.yml*.
+4. Click **Next** and **Done**.
+
+#### Stopping, starting, and updating
+
+Run these from the same folder, the same way as Step 4 and 5:
+
+| What you want | Command |
+| --- | --- |
+| Stop it | `docker compose down` |
+| Start it again | `docker compose up -d` |
+| Update to the newest version | `docker compose pull` then `docker compose up -d` |
+| See what it's doing (for troubleshooting) | `docker compose logs` |
+
+---
+
+### The short way
+
+```bash
+mkdir wiim-remote && cd wiim-remote
+curl -fsSL https://raw.githubusercontent.com/gthibo/wiim-universal-remote/main/docker-compose.yml -o docker-compose.yml
+touch .env
+docker compose up -d
+```
+
+Console on `:39447`. Multi-arch image (`linux/amd64`, `linux/arm64`) at `ghcr.io/gthibo/wiim-universal-remote`.
+
+`.env` is optional and may be empty — see [Remote token](#remote-token) for the one setting most people might want. To pin a version, replace `:latest` with `:0.1.0`. To build from source instead, clone the repo and uncomment `build: .` in the compose file.
+
+---
+
+### Reaching it from your phone and your remote
+
+`localhost` only works on the computer you installed on. Your phone and your remote need that computer's **address on your network**, which looks like `192.168.1.50`.
+
+To find it, run this in the same terminal window:
+
+- **Windows:** `ipconfig` — look for *IPv4 Address*
+- **Mac/Linux:** `hostname -I` (or `ipconfig getifaddr en0` on a Mac)
+
+Then from your phone, browse to `http://` + that address + `:39447` — for example `http://192.168.1.50:39447`.
+
+**Give that computer a fixed address too.** Same reasoning as the WiiM below: if it changes, every button on your remote stops working. Your router's DHCP reservation setting handles both in one visit.
+
+If the page loads on the server but not on your phone, see [Troubleshooting](#troubleshooting).
+
+### Make sure it starts by itself
+
+The service restarts automatically, but **Docker** has to be running first:
+
+- **Docker Desktop (Windows/Mac):** Settings → General → check *Start Docker Desktop when you log in*.
+- **Linux / Raspberry Pi:** `sudo systemctl enable docker`
+- **Synology:** Container Manager starts with the NAS. Nothing to do.
+
+---
 ## Set up your WiiM's address
 
 Find your WiiM's IP address in the WiiM Home app: **Device Settings → About → IP Address**. It'll look like `192.168.1.102`.
@@ -240,17 +366,13 @@ Note that `audio`, `service`, `quality`, and `albumArt` are always `null` here. 
 
 ## Remote token
 
-By default there is no password. If you want one — you're on a shared network, or you're just uncomfortable with the default — set `REMOTE_TOKEN` in your `.env` file:
+By default there is no password. If you want one — you're on a shared network, or you're just uncomfortable with the default — put this line in your `.env` file:
 
 ```
 REMOTE_TOKEN=some-long-random-string
 ```
 
-Then restart:
-
-```bash
-docker compose up -d
-```
+Then restart it (`docker compose up -d` from your folder).
 
 Every request now needs that token, either as a query parameter or a header:
 
@@ -279,7 +401,6 @@ http://<your-server>:39447/api/remote/192.168.1.195/vol/up   ← office
 One container, one port, as many speakers as you like.
 
 ---
-
 ## Setting up a Sofabaton X1S
 
 The X1S is the device this was built for, but nothing here is specific to it — any remote that can fire an HTTP GET will work.
@@ -301,6 +422,9 @@ Some practical notes:
 **A button does nothing, and nothing seems wrong.**
 This is almost always the host machine being off or asleep. Check that first, every time. Second most likely: your WiiM's IP address changed — go back to [DHCP reservation](#set-up-your-wiims-address).
 
+**`docker: command not found` (or PowerShell says it isn't recognized).**
+Docker isn't installed, or Docker Desktop isn't running. On Windows, open Docker Desktop and wait for it to say *Engine running*, then try again.
+
 **The console loads on the server but not on my phone.**
 The two machines need to be on the same network — check you're not on a guest Wi-Fi network or a VPN. Then check the address: `localhost` only works on the server itself; from your phone you need the server's LAN address.
 
@@ -314,6 +438,9 @@ The address in your URL isn't on a private network. This service only talks to L
 
 **A command returns an error but the device works fine in the app.**
 Not every WiiM supports every command. `display/*` is Ultra-only; inputs your model doesn't have will fail. If you think something should work, open an issue with your model and firmware version.
+
+**Something else.**
+Run `docker compose logs` from your folder — that's where the actual error will be.
 
 ---
 
@@ -334,6 +461,8 @@ If you've used [keithmuller/wiim_proxy](https://github.com/keithmuller/wiim_prox
 Next.js on Node 22, three runtime dependencies, no database, no login, no state. The container is stateless — delete and recreate it freely, there is nothing to back up.
 
 It talks to your WiiM over the LinkPlay local HTTP API (`https://<ip>/httpapi.asp?command=...`). Some of those commands are documented by WiiM; some are community-discovered and verified against real hardware. Where a command is unverified it's marked as such in the source rather than presented as fact.
+
+Images are published to `ghcr.io/gthibo/wiim-universal-remote` for `linux/amd64` and `linux/arm64`.
 
 Originally forked from a self-hosted WiiM dashboard, then stripped down to the headless service you see here.
 
