@@ -1,7 +1,9 @@
 services:
   wiim-remote:
-    build: .
-    image: wiim-remote:latest
+    # Prebuilt multi-arch image (amd64 + arm64) -- no build toolchain needed.
+    image: ghcr.io/gthibo/wiim-universal-remote:latest
+    # To build from source instead, comment out `image:` above and uncomment:
+    # build: .
     container_name: wiim-remote
     restart: unless-stopped
     env_file: .env
